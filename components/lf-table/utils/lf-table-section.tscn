@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3 uid="uid://dv4asubykyv02"]
+
+[ext_resource type="Script" uid="uid://6yyw4no7vvn0" path="res://utils/lf/components/lf-table/utils/lf-table-section.gd" id="1_7lwr0"]
+
+[node name="LfTableSection" type="MarginContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_7lwr0")

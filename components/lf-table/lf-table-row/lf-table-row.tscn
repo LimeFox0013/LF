@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cq5h4k8vxm7wd"]
+
+[node name="LFTableRow" type="HBoxContainer"]
+clip_contents = true
+size_flags_horizontal = 2
+size_flags_vertical = 0

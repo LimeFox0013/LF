@@ -1,0 +1,28 @@
+[gd_scene load_steps=8 format=3 uid="uid://d4mjwdjpla7li"]
+
+[ext_resource type="Script" uid="uid://n5lpwryqqmdh" path="res://utils/lf/components/lf-table/lf-table.gd" id="1_iuh4l"]
+[ext_resource type="PackedScene" uid="uid://hagfgs442swt" path="res://utils/lf/components/lf-table/lf-table-def/lf-table-def.tscn" id="2_rmjdf"]
+[ext_resource type="Script" uid="uid://cvt7va8it3y4q" path="res://utils/lf/components/lf-table/utils/lf-table-def.gd" id="2_s4gd4"]
+[ext_resource type="Script" uid="uid://oeh3vfpn6ex4" path="res://utils/lf/components/lf-table/utils/lf-table-col-def.gd" id="3_111ms"]
+
+[sub_resource type="Resource" id="Resource_4l5k1"]
+script = ExtResource("2_s4gd4")
+metadata/_custom_type_script = "uid://cvt7va8it3y4q"
+
+[sub_resource type="Resource" id="Resource_ke1g8"]
+script = ExtResource("3_111ms")
+name = "name"
+metadata/_custom_type_script = "uid://oeh3vfpn6ex4"
+
+[sub_resource type="Resource" id="Resource_i5qvl"]
+script = ExtResource("3_111ms")
+name = "path"
+metadata/_custom_type_script = "uid://oeh3vfpn6ex4"
+
+[node name="LFTable" type="MarginContainer"]
+script = ExtResource("1_iuh4l")
+tableDef = SubResource("Resource_4l5k1")
+colDefs = Array[ExtResource("3_111ms")]([SubResource("Resource_ke1g8"), SubResource("Resource_i5qvl")])
+
+[node name="LFTableDef" parent="." instance=ExtResource("2_rmjdf")]
+layout_mode = 2
