@@ -24,3 +24,7 @@ static func loadFile(file: String) -> String:
 # Load (JSON)
 static func loadJson(file: String) -> Dictionary:
 	return JSON.parse_string(loadFile(file));
+
+
+static func ensureDir(absPath: String) -> void:
+	return DirAccess.make_dir_recursive_absolute(absPath);
