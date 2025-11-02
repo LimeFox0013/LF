@@ -55,7 +55,6 @@ func _job(zipPath: String, targetDir: String, progressEvery: int) -> void:
 	# Force destination to be a directory.
 	var baseDir := targetDir if targetDir != '' else zipPath.get_base_dir();
 	baseDir = _ensureDirLike(baseDir).simplify_path();
-	OS.execute_with_pipe()
 
 	# Create the base dir up front.
 	var mkRoot := DirAccess.make_dir_recursive_absolute(baseDir);
