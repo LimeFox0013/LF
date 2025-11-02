@@ -56,6 +56,7 @@ AI development context for all GDScript classes in the LF utility library.
 ### Network & OS
 
 - **LFHTTP** - Full-featured HTTP client with automatic redirect following, TLS support, timeout handling, JSON response parsing, and free TCP port finder
+- **LFSocket** - WebSocket client for real-time communication with NestJS backend, supporting both unidirectional messages (emit) and request/response patterns with JSON serialization
 - **LFOS** - Operating system and architecture detection utilities (Windows, Linux, macOS, Android, iOS, Web), CPU architecture detection (x86_64, ARM64, ARM32, WASM32), and backend selection for hardware acceleration (Metal, CUDA, Vulkan, CPU)
 - **LFShell** - Cross-platform shell command execution utility (currently commented out)
 
