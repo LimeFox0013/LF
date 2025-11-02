@@ -1,0 +1,121 @@
+class_name LFUtils;
+extends Resource;
+
+
+static func createTimer(t: float, callback := func(): pass) -> SceneTreeTimer:
+	var timer: SceneTreeTimer = treeRoot.root.get_tree().create_timer(t / 1000.0);
+	timer.timeout.connect(callback, CONNECT_ONE_SHOT);
+	return timer;
+
+
+static func timeout(t: float, callback := func(): pass):
+	return await createTimer(t, callback).timeout;
+
+
+static var treeRoot: MainLoop:
+	get(): return Engine.get_main_loop();
+
+
+static func mergeArr(targetArray: Array, ...arrays):
+	var target = targetArray.duplicate(true);
+	for array in arrays:
+		target.append_array(array);
+	return target;
+
+
+static func mergeObj(targetObject: Resource, ...dictionaries):
+	var target = targetObject.duplicate(true);
+	for dictionary in dictionaries:
+		for prop in dictionary.keys():
+			target.set(prop, dictionary.get(prop));
+	return target;
+
+
+static func areEqualRes(props: Array[String], target: Resource, ...resources) -> bool:
+	if resources.is_empty():
+		return true;
+	# Cache target values
+	var targetProps := {}
+	var targetPropsArr := selectPropsArr(target);
+	for prop in props:
+		targetProps[prop] = target.get(prop) if targetPropsArr.has(prop) else null;
+
+	# Compare with each other resource
+	for resource in resources:
+		if resource == null || !(resource is Resource):
+			return false
+		var resourcePropsArr := selectPropsArr(resource);
+		for prop in props:
+			var a = targetProps[prop];
+			var b = resource.get(prop) if resourcePropsArr.has(prop) else null;
+			if !deepEqual(a, b):
+				return false
+	return true
+
+
+static func selectPropsArr(resource: Resource) -> Array[String]:
+	var props: Array[String] = [];
+	props.assign(
+		resource.get_property_list().map(
+			func (propDict): return propDict.name,
+		),
+	);
+	return props;
+
+
+static func deepEqual(a, b) -> bool:
+	if typeof(a) != typeof(b):
+		return false
+
+	match typeof(a):
+		TYPE_ARRAY:
+			var aa: Array = a
+			var bb: Array = b
+			if aa.size() != bb.size():
+				return false
+			for i in aa.size():
+				if !deepEqual(aa[i], bb[i]):
+					return false
+			return true
+
+		TYPE_DICTIONARY:
+			var da: Dictionary = a
+			var db: Dictionary = b
+			if da.size() != db.size():
+				return false
+			for k in da.keys():
+				if !db.has(k) || !deepEqual(da[k], db[k]):
+					return false
+			return true
+
+		_:
+			return a == b
+
+
+static func saveFile(file: String, data: String):
+	var dir := DirAccess.open("user://");
+	dir.make_dir_recursive("user://data");
+	var f := FileAccess.open("user://data/" + file, FileAccess.WRITE);
+	f.store_string(data);
+	f.close();
+
+
+# Save (JSON)
+static func saveJson(file: String, json: Dictionary) -> void:
+	LFUtils.saveFile(file, JSON.stringify(json));
+
+
+static func loadFile(file: String) -> String:
+	var path := "user://data/" + file;
+	if not FileAccess.file_exists(path):
+		return '';
+	return FileAccess.get_file_as_string(path);
+
+
+# Load (JSON)
+static func loadJson(file: String) -> Dictionary:
+	return JSON.parse_string(loadFile(file));
+
+
+static func ensureDir(absPath: String) -> void:
+	return DirAccess.make_dir_recursive_absolute(absPath);
