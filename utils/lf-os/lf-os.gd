@@ -44,7 +44,7 @@ static func detectArch() -> String:
 ## 	osName: result from detectOs()
 ## Returns:
 ## 	'metal' | 'cuda' | 'vulkan' | 'cpu'
-static func selectBackend(osName: String) -> String:
+static func selectBackend(osName: String = detectOs()) -> String:
 	if osName == 'macos':
 		return 'metal';
 	var vendor := safeGetGpuVendor();
