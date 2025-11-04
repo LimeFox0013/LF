@@ -9,3 +9,9 @@ func _init(filePath: String = '') -> void:
 		_transformOut,
 		_transformIn,
 	);
+
+
+func setByPath(propsPath: String, value):
+	var newData := (data as Dictionary).duplicate(true);
+	LFDictionary.setByPath(newData, propsPath, value);
+	data = newData;
