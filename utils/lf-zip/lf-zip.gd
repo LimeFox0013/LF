@@ -12,7 +12,7 @@ enum STATUS {
 ## @param zipPath String: path to .zip
 ## @param dirPath String: destination directory ('' → zip's folder)
 ## @return int: LFZip.OK on success, LFZip.ERROR on failure
-static func unpack(zipPath: String, dirPath: String) -> int:
+static func extract(zipPath: String, dirPath: String) -> int:
 	var worker := ZipUnpacker.new();
 	var finalResult := { 'ok': false };
 

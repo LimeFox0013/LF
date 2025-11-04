@@ -43,14 +43,14 @@ static func areEqualRes(props: Array[String], target: Resource, ...resources) ->
 	# Compare with each other resource
 	for resource in resources:
 		if resource == null || !(resource is Resource):
-			return false
+			return false;
 		var resourcePropsArr := selectPropsArr(resource);
 		for prop in props:
 			var a = targetProps[prop];
 			var b = resource.get(prop) if resourcePropsArr.has(prop) else null;
 			if !deepEqual(a, b):
-				return false
-	return true
+				return false;
+	return true;
 
 
 static func selectPropsArr(resource: Resource) -> Array[String]:
@@ -65,18 +65,18 @@ static func selectPropsArr(resource: Resource) -> Array[String]:
 
 static func deepEqual(a, b) -> bool:
 	if typeof(a) != typeof(b):
-		return false
+		return false;
 
 	match typeof(a):
 		TYPE_ARRAY:
 			var aa: Array = a
 			var bb: Array = b
 			if aa.size() != bb.size():
-				return false
+				return false;
 			for i in aa.size():
 				if !deepEqual(aa[i], bb[i]):
-					return false
-			return true
+					return false;
+			return true;
 
 		TYPE_DICTIONARY:
 			var da: Dictionary = a
@@ -85,37 +85,8 @@ static func deepEqual(a, b) -> bool:
 				return false
 			for k in da.keys():
 				if !db.has(k) || !deepEqual(da[k], db[k]):
-					return false
-			return true
+					return false;
+			return true;
 
 		_:
-			return a == b
-
-
-static func saveFile(file: String, data: String):
-	var dir := DirAccess.open("user://");
-	dir.make_dir_recursive("user://data");
-	var f := FileAccess.open("user://data/" + file, FileAccess.WRITE);
-	f.store_string(data);
-	f.close();
-
-
-# Save (JSON)
-static func saveJson(file: String, json: Dictionary) -> void:
-	LFUtils.saveFile(file, JSON.stringify(json));
-
-
-static func loadFile(file: String) -> String:
-	var path := "user://data/" + file;
-	if not FileAccess.file_exists(path):
-		return '';
-	return FileAccess.get_file_as_string(path);
-
-
-# Load (JSON)
-static func loadJson(file: String) -> Dictionary:
-	return JSON.parse_string(loadFile(file));
-
-
-static func ensureDir(absPath: String) -> void:
-	return DirAccess.make_dir_recursive_absolute(absPath);
+			return a == b;

@@ -10,10 +10,10 @@ var _data;
 var data:
 	get():
 		if !_data:
-			_data = _transformOut.call(LFUtils.loadFile(_path));
+			_data = _transformOut.call(LFFile.loadFile(_path));
 		return _data;
 	set(newData):
-		LFUtils.saveFile(_path, _transformIn.call(newData));
+		LFFile.save(_path, _transformIn.call(newData));
 		_data = newData;
 		update.emit();
 		
