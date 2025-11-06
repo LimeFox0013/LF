@@ -1,7 +1,6 @@
-# LF
-Set of utilities and use from box solutions for Godot gd-script
+<img width="1200" height="200" alt="git banner" src="https://github.com/user-attachments/assets/765ec17d-3d5e-44a7-9d13-6bdf2cab4059" />
 
-## Ideas:
-- Keep my func AI friendly
-- Train local model to work "LF driven" in "gamedev context" in parallel ?
-- - how to train local modal more efficient
+# LimeFox utils
+Set of utilities and "use from box" solutions for Godot (gd-script)
+
+### Vibe-coding on game-like AI project 
