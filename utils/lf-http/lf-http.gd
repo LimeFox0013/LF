@@ -29,8 +29,8 @@ static func _single_request(
 	body: String,
 	timeout_ms := 0,
 ) -> Dictionary:
-	var u := _parse_url(url)
-	if u.is_empty():
+	var u := LFUrl.new(url);
+	if u.isEmpty():
 		return { "ok": false, "status": 0, "error": "Invalid URL" }
 
 	var use_tls: bool = u.scheme == "https"
@@ -108,35 +108,14 @@ static func _single_request(
 
 	# ---- helpers ----
 
-static func _parse_url(url: String) -> Dictionary:
-	# Very small URL parser for http/https
-	# Matches: scheme://host[:port][/path][?query]
-	var re := RegEx.new()
-	re.compile("^(?P<scheme>https?)://(?P<host>[^/:?#]+)(?::(?P<port>\\d+))?(?P<path>/[^?#]*)?(?:\\?(?P<query>[^#]*))?$")
-	var m := re.search(url)
-	if m == null:
-		return {}
-	var scheme := m.get_string("scheme").to_lower()
-	var host := m.get_string("host")
-	var port_str := m.get_string("port")
-	var port := int(port_str) if port_str != "" else 0
-	var path := m.get_string("path")
-	var query := m.get_string("query")
-	return {
-		"scheme": scheme,
-		"host": host,
-		"port": port,
-		"path": path,
-		"query": query
-	}
 
 static func _absolutize(base_url: String, loc: String) -> String:
 	# Absolute?
 	if loc.begins_with("http://") or loc.begins_with("https://"):
 		return loc
 	# Parse base
-	var b := _parse_url(base_url)
-	if b == null:
+	var b := LFUrl.parse(base_url)
+	if b.isNull():
 		return loc
 	# Root-relative
 	if loc.begins_with("/"):
@@ -154,16 +133,13 @@ static func findFreeTcpPort(
 	from: int = 3000,
 	to: int = 4000,
 ) -> int:
-	var s := TCPServer.new()
-	
-	# 1) Try preferred ports first
+	var s := TCPServer.new();
 	for p in range(from, to):
-		print('p == ', p)
 		if s.listen(p, ip) == OK:
-			print('Port ', p, ' is free');
+			print('[findFreeTcpPort]: Port ', p, ' is free');
 			s.stop()
-			print('stopped connection to ', p, ' ', !s.is_listening())
+			print('[findFreeTcpPort]: freeing ', p, ' before return - ', !s.is_listening())
 			return p;
 		s.stop();
-	push_error('No free port between {from} to {to}'.format({ 'from': from, 'to': to }));
+	push_error('[findFreeTcpPort]: No free port between %s to %s' % [from, to]);
 	return from;
