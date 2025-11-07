@@ -11,24 +11,25 @@ extends RefCounted;
 ## - Binary data support
 
 static var _instance: LFSocketInstance;
+static var _logger := LFLogger.new(['[LFSocket]:']);
 
 
 ## Connect to WebSocket server
-## @param url: WebSocket URL (e.g., "ws://localhost:3000")
+## @param url: WebSocket URL (e.g., 'ws://localhost:3000')
 ## @param options: LFSocketOptions for customizing behavior
 ## @return: true if connection initiated successfully
 static func connectWS(url: String, options: LFSocketOptions = null) -> bool:
-	print("[LFSocket]: connectWS() called with URL: %s" % url)
+	_logger.log('connectWS() called with URL: %s' % url)
 	
 	if _instance && _instance.isConnected():
-		push_warning("[LFSocket]: Already connected. Disconnect first.");
+		_logger.warning('Already connected. Disconnect first.');
 		return false;
 	
 	if options == null:
 		options = LFSocketOptions.new()
-		print("[LFSocket]: Using default LFSocketOptions")
+		_logger.log('Using default LFSocketOptions')
 	else:
-		print("[LFSocket]: Using custom LFSocketOptions - auto_reconnect: %s, reconnect_interval: %dms" % [options.auto_reconnect, options.reconnect_interval_ms])
+		_logger.log('Using custom LFSocketOptions - auto_reconnect: %s, reconnect_interval: %dms' % [options.auto_reconnect, options.reconnect_interval_ms])
 	
 	_instance = LFSocketInstance.new();
 	return _instance.connect_to_server(url, options);
@@ -36,13 +37,13 @@ static func connectWS(url: String, options: LFSocketOptions = null) -> bool:
 ## Disconnect from WebSocket server
 ## @param disable_reconnect: If true, prevents auto-reconnection
 static func disconnectWS(disable_reconnect: bool = true) -> void:
-	print("[LFSocket]: disconnectWS() called, disable_reconnect: %s" % disable_reconnect)
+	_logger.log('disconnectWS() called, disable_reconnect: %s' % disable_reconnect)
 	if _instance:
 		_instance.disconnect_from_server(disable_reconnect);
 		if disable_reconnect:
 			_instance = null;
 	else:
-		print("[LFSocket]: disconnectWS() called but no instance exists")
+		_logger.log('disconnectWS() called but no instance exists')
 
 ## Check if connected
 static func isConnected() -> bool:
@@ -54,9 +55,9 @@ static func isConnected() -> bool:
 ## @param queue_if_offline: Queue message if not connected (requires queue_offline_messages enabled)
 static func emit(event: String, data: Variant = {}, queue_if_offline: bool = true) -> void:
 	if !_instance:
-		push_error("[LFSocket]: Not connected. Call connectWS() first.");
+		_logger.error('Not connected. Call connectWS() first.');
 		return;
-	print("[LFSocket]: emit() called for event: %s" % event)
+	_logger.log('emit() called for event: %s' % event)
 	
 	_instance.sendMessage(event, data, queue_if_offline);
 
@@ -67,19 +68,19 @@ static func emit(event: String, data: Variant = {}, queue_if_offline: bool = tru
 ## @return: Response data or null on error/timeout
 static func request(event: String, data: Variant = {}, timeout_ms: int = 5000) -> Variant:
 	if !_instance:
-		push_error("[LFSocket]: Not connected. Call connectWS() first.");
+		_logger.error('Not connected. Call connectWS() first.');
 		return null;
-	print("[LFSocket]: request() called for event: %s, timeout: %dms" % [event, timeout_ms])
+	_logger.log('request() called for event: %s, timeout: %dms' % [event, timeout_ms])
 	return await _instance.request_message(event, data, timeout_ms);
 
 ## Listen to server events
-## @param event: Event name to listen for, or "*" for all events
+## @param event: Event name to listen for, or '*' for all events
 ## @param callback: Callable to execute when event received
 static func on(event: String, callback: Callable) -> void:
 	if !_instance:
-		push_error("[LFSocket]: Not connected. Call connectWS() first.");
+		_logger.error('Not connected. Call connectWS() first.');
 		return;
-	print("[LFSocket]: Registered listener for event: %s" % event)
+	_logger.log('Registered listener for event: %s' % event)
 	_instance.on_event(event, callback);
 
 ## Remove event listener
@@ -92,7 +93,7 @@ static func off(event: String, callback: Callable) -> void:
 ## Get connection status
 static func getStatus() -> Dictionary:
 	if !_instance:
-		return { "connected": false, "url": "" };
+		return { 'connected': false, 'url': '' };
 	return _instance.getStatus();
 
 ## Connection lifecycle callbacks
@@ -125,7 +126,7 @@ static func onReconnecting(callback: Callable) -> void:
 ## @param data: Binary data as PackedByteArray
 static func emitBinary(event: String, data: PackedByteArray) -> void:
 	if !_instance:
-		push_error("LFSocket: Not connected. Call connectWS() first.");
+		_logger.error('Not connected. Call connectWS() first.');
 		return;
 	_instance.emit_binary(event, data);
 

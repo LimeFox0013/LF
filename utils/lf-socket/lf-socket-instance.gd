@@ -1,8 +1,12 @@
 
 class_name LFSocketInstance;
 extends RefCounted;
+
+
 var _socket: WebSocketPeer;
 var _url: String;
+var _uid := LFUuid.gen('socken-instance');
+var _logger := LFLogger.new(['[LFSocketInstance] (%s):' % [_uid]]);
 var _connected: bool = false;
 var _options: LFSocketOptions;
 var _listeners: Dictionary = {}; # event -> Array[Callable]
@@ -31,38 +35,38 @@ func _init() -> void:
 	_socket = WebSocketPeer.new();
 
 func connect_to_server(url: String, options: LFSocketOptions) -> bool:
-	print("[LFSocket]: Initializing connection to: %s" % url)
+	_logger.log('Initializing connection to: %s' % url)
 	_url = url;
 	_options = options;
 	_current_reconnect_interval = options.reconnect_interval_ms;
-	print("[LFSocket]: Configuration - heartbeat: %dms, max_queue: %d, auto_reconnect: %s" % [options.heartbeat_interval_ms, options.max_queue_size, options.auto_reconnect])
+	_logger.log('Configuration - heartbeat: %dms, max_queue: %d, auto_reconnect: %s' % [options.heartbeat_interval_ms, options.max_queue_size, options.auto_reconnect])
 	return _attempt_connection();
 
 func _attempt_connection() -> bool:
-	print("[LFSocket]: Attempting connection to: %s" % _url)
-	print("[LFSocket]: Socket state before connect: %d" % _socket.get_ready_state())
+	_logger.log('Attempting connection to: %s' % _url)
+	_logger.log('Socket state before connect: %d' % _socket.get_ready_state())
 	
 	var err := _socket.connect_to_url(_url);
 	
 	if err != OK:
-		push_error("[LFSocket]: Failed to initiate connection to %s (error code: %d)" % [_url, err]);
-		print("[LFSocket]: Error codes: OK=0, FAILED=1, ERR_INVALID_PARAMETER=30")
-		_trigger_error("Connection failed: error %d" % err);
+		_logger.error('Failed to initiate connection to %s (error code: %d)' % [_url, err]);
+		_logger.log('Error codes: OK=0, FAILED=1, ERR_INVALID_PARAMETER=30')
+		_trigger_error('Connection failed: error %d' % err);
 		_schedule_reconnect();
 		return false;
 	
-	print("[LFSocket]: Connection initiated successfully, socket state: %d" % _socket.get_ready_state())
-	print("[LFSocket]: State codes: CONNECTING=0, OPEN=1, CLOSING=2, CLOSED=3")
+	_logger.log('Connection initiated successfully, socket state: %d' % _socket.get_ready_state())
+	_logger.log('State codes: CONNECTING=0, OPEN=1, CLOSING=2, CLOSED=3')
 	
 	# Start polling in background
 	_start_polling();
 	return true;
 
 func disconnect_from_server(disable_reconnect: bool = true) -> void:
-	print("[LFSocket]: Disconnecting from server, disable_reconnect: %s" % disable_reconnect)
+	_logger.log('Disconnecting from server, disable_reconnect: %s' % disable_reconnect)
 	_should_reconnect = !disable_reconnect;
 	if _socket:
-		print("[LFSocket]: Closing socket, current state: %d" % _socket.get_ready_state())
+		_logger.log('Closing socket, current state: %d' % _socket.get_ready_state())
 		_socket.close();
 	_connected = false;
 	_trigger_close();
@@ -72,23 +76,23 @@ func isConnected() -> bool:
 
 func sendMessage(type: String, data: Variant, queue_if_offline: bool = true) -> void:
 	var message := {
-		"type": type,
-		"data": data
+		'type': type,
+		'data': data
 	};
 	
-	print("[LFSocket]: sendMessage(): type : %s, connected: %s" % [type, _connected])
+	_logger.log('sendMessage(): type : %s, connected: %s' % [type, _connected])
 	
 	if !_connected && queue_if_offline && _options.queue_offline_messages:
-		print("[LFSocket]: Not connected, queueing message: %s" % type)
+		_logger.log('Not connected, queueing message: %s' % type)
 		_queue_message(message);
 	else:
 		_send_json(message);
 
 
 func emit_binary(event: String, data: PackedByteArray) -> void:
-	print("[LFSocket]: emit_binary() called for event: %s, data size: %d bytes" % [event, data.size()])
+	_logger.log('emit_binary() called for event: %s, data size: %d bytes' % [event, data.size()])
 	if !_socket || !_connected:
-		push_warning("[LFSocket]: Cannot send binary data when not connected");
+		push_warning('[LFSocket]: Cannot send binary data when not connected');
 		return;
 	
 	# Prefix with event name (simple protocol: first 4 bytes = event name length, then event name, then data)
@@ -107,21 +111,21 @@ func emit_binary(event: String, data: PackedByteArray) -> void:
 	
 	var err := _socket.send(full_data);
 	if err != OK:
-		push_error("[LFSocket]: Failed to send binary data (error %d)" % err);
+		_logger.error('Failed to send binary data (error %d)' % err);
 	else:
-		print("[LFSocket]: Binary data sent successfully, total size: %d bytes" % full_data.size())
+		_logger.log('Binary data sent successfully, total size: %d bytes' % full_data.size())
 
 func request_message(event: String, data: Variant, timeout_ms: int) -> Variant:
 	_request_counter += 1;
-	var request_id := "req_%d_%d" % [Time.get_ticks_msec(), _request_counter];
+	var request_id := 'req_%d_%d' % [Time.get_ticks_msec(), _request_counter];
 	
-	print("[LFSocket]: request_message() - event: %s, id: %s, timeout: %dms" % [event, request_id, timeout_ms])
+	_logger.log('request_message() - event: %s, id: %s, timeout: %dms' % [event, request_id, timeout_ms])
 	
 	var message := {
-		"type": "request",
-		"id": request_id,
-		"event": event,
-		"data": data
+		'type': 'request',
+		'id': request_id,
+		'event': event,
+		'data': data
 	};
 	
 	# Create promise for response
@@ -129,10 +133,10 @@ func request_message(event: String, data: Variant, timeout_ms: int) -> Variant:
 	var response_data: Variant = null;
 	
 	_pending_requests[request_id] = {
-		"callback": func(data_response: Variant) -> void:
+		'callback': func(data_response: Variant) -> void:
 			response_data = data_response;
 			response_received = true,
-		"created_at": Time.get_ticks_msec()
+		'created_at': Time.get_ticks_msec()
 	};
 	
 	_send_json(message);
@@ -142,16 +146,16 @@ func request_message(event: String, data: Variant, timeout_ms: int) -> Variant:
 	while !response_received:
 		if timeout_ms > 0 && (Time.get_ticks_msec() - start_time) > timeout_ms:
 			_pending_requests.erase(request_id);
-			push_warning("[LFSocket]: Request timeout for event '%s' (id: %s)" % [event, request_id]);
+			push_warning('[LFSocket]: Request timeout for event "%s" (id: %s)' % [event, request_id]);
 			return null;
 		await LFAwait.nextTick;
 	
-	print("[LFSocket]: Received response for request id: %s" % request_id)
+	_logger.log('Received response for request id: %s' % request_id)
 	_pending_requests.erase(request_id);
 	return response_data;
 
 func on_event(event: String, callback: Callable) -> void:
-	if event == "*":
+	if event == '*':
 		_wildcard_listeners.append(callback);
 		return;
 	
@@ -160,7 +164,7 @@ func on_event(event: String, callback: Callable) -> void:
 	_listeners[event].append(callback);
 
 func off_event(event: String, callback: Callable) -> void:
-	if event == "*":
+	if event == '*':
 		_wildcard_listeners.erase(callback);
 		return;
 	
@@ -194,58 +198,58 @@ func force_reconnect() -> void:
 
 func getStatus() -> Dictionary:
 	return {
-		"connected": _connected,
-		"url": _url,
-		"state": _socket.get_ready_state() if _socket else WebSocketPeer.STATE_CLOSED,
-		"pending_requests": _pending_requests.size(),
-		"queued_messages": _message_queue.size(),
-		"reconnect_attempts": _reconnect_attempts,
-		"auto_reconnect": _options.auto_reconnect if _options else false
+		'connected': _connected,
+		'url': _url,
+		'state': _socket.get_ready_state() if _socket else WebSocketPeer.STATE_CLOSED,
+		'pending_requests': _pending_requests.size(),
+		'queued_messages': _message_queue.size(),
+		'reconnect_attempts': _reconnect_attempts,
+		'auto_reconnect': _options.auto_reconnect if _options else false
 	};
 
 func _send_json(data: Dictionary) -> void:
 	if !_socket:
-		push_error("[LFSocket]: Socket not initialized");
+		_logger.error('Socket not initialized');
 		return;
 	
 	if !_connected:
-		push_warning("[LFSocket]: Cannot send message when not connected, socket state: %d" % _socket.get_ready_state());
+		push_warning('[LFSocket]: Cannot send message when not connected, socket state: %d' % _socket.get_ready_state());
 		return;
 	
 	var json_str := JSON.stringify(data);
-	print("[LFSocket]: Sending JSON message, type: %s, size: %d bytes" % [data.get("type", "unknown"), json_str.length()])
+	_logger.log('Sending JSON message, type: %s, size: %d bytes' % [data.get('type', 'unknown'), json_str.length()])
 	var err := _socket.send_text(json_str);
 	if err != OK:
-		push_error("[LFSocket]: Failed to send message (error %d)" % err);
+		_logger.error('Failed to send message (error %d)' % err);
 	else:
-		print("[LFSocket]: Message sent successfully")
+		_logger.log('Message sent successfully')
 
 func _queue_message(message: Dictionary) -> void:
 	if _message_queue.size() >= _options.max_queue_size:
 		# Remove oldest message if queue is full
 		_message_queue.pop_front();
-		push_warning("[LFSocket]: Message queue full (%d messages), removed oldest message" % _options.max_queue_size);
+		push_warning('[LFSocket]: Message queue full (%d messages), removed oldest message' % _options.max_queue_size);
 	_message_queue.append(message);
-	print("[LFSocket]: Message queued, queue size: %d/%d" % [_message_queue.size(), _options.max_queue_size])
+	_logger.log('Message queued, queue size: %d/%d' % [_message_queue.size(), _options.max_queue_size])
 
 func _flush_queue() -> void:
 	if _message_queue.is_empty():
-		print("[LFSocket]: Queue is empty, nothing to flush")
+		_logger.log('Queue is empty, nothing to flush')
 		return;
 	
-	print("[LFSocket]: Flushing %d queued messages" % _message_queue.size());
+	_logger.log('Flushing %d queued messages' % _message_queue.size());
 	for message in _message_queue:
 		_send_json(message);
 	_message_queue.clear();
-	print("[LFSocket]: Queue flushed successfully")
+	_logger.log('Queue flushed successfully')
 
 func _start_polling() -> void:
 	var tree := Engine.get_main_loop() as SceneTree;
 	if !tree:
-		push_error("[LFSocket]: SceneTree not available");
+		_logger.error('SceneTree not available');
 		return;
 	
-	print("[LFSocket]: Starting polling loop")
+	_logger.log('Starting polling loop')
 	
 	# Poll WebSocket in background
 	var poll_task := func() -> void:
@@ -257,17 +261,17 @@ func _start_polling() -> void:
 			# Log state changes
 			if state != last_state:
 				var state_names := {
-					WebSocketPeer.STATE_CONNECTING: "CONNECTING",
-					WebSocketPeer.STATE_OPEN: "OPEN",
-					WebSocketPeer.STATE_CLOSING: "CLOSING",
-					WebSocketPeer.STATE_CLOSED: "CLOSED"
+					WebSocketPeer.STATE_CONNECTING: 'CONNECTING',
+					WebSocketPeer.STATE_OPEN: 'OPEN',
+					WebSocketPeer.STATE_CLOSING: 'CLOSING',
+					WebSocketPeer.STATE_CLOSED: 'CLOSED'
 				}
-				print("[LFSocket]: State changed: %s -> %s" % [state_names.get(last_state, "UNKNOWN"), state_names.get(state, "UNKNOWN")])
+				_logger.log('State changed: %s -> %s' % [state_names.get(last_state, 'UNKNOWN'), state_names.get(state, 'UNKNOWN')])
 				last_state = state
 			
 			# Handle connection state
 			if state == WebSocketPeer.STATE_OPEN && !_connected:
-				print("[LFSocket]: Connection established successfully!")
+				_logger.log('Connection established successfully!')
 				_connected = true;
 				_reconnect_attempts = 0;
 				_current_reconnect_interval = _options.reconnect_interval_ms;
@@ -276,7 +280,7 @@ func _start_polling() -> void:
 				_flush_queue();
 				_start_heartbeat();
 			elif state == WebSocketPeer.STATE_CLOSED && _connected:
-				print("[LFSocket]: Connection closed")
+				_logger.log('Connection closed')
 				_connected = false;
 				disconnected.emit();
 				_trigger_close();
@@ -284,8 +288,8 @@ func _start_polling() -> void:
 					_schedule_reconnect();
 				break;
 			elif state == WebSocketPeer.STATE_CLOSED && !_connected && last_state == WebSocketPeer.STATE_CONNECTING:
-				print("[LFSocket]: Connection failed - never reached OPEN state")
-				print("[LFSocket]: Close code: %d, reason: %s" % [_socket.get_close_code(), _socket.get_close_reason()])
+				_logger.log('Connection failed - never reached OPEN state')
+				_logger.log('Close code: %d, reason: %s' % [_socket.get_close_code(), _socket.get_close_reason()])
 				if _should_reconnect:
 					_schedule_reconnect();
 				break;
@@ -293,17 +297,17 @@ func _start_polling() -> void:
 			# Process incoming messages
 			var packet_count := _socket.get_available_packet_count()
 			if packet_count > 0:
-				print("[LFSocket]: Processing %d incoming packet(s)" % packet_count)
+				_logger.log('Processing %d incoming packet(s)' % packet_count)
 			
 			while _socket.get_available_packet_count() > 0:
 				var packet := _socket.get_packet();
 				var is_text := _socket.was_string_packet();
 				if is_text:
 					var json_str := packet.get_string_from_utf8();
-					print("[LFSocket]: Received text message: %s" % json_str)
+					_logger.log('Received text message: %s' % json_str)
 					_handle_message(json_str);
 				else:
-					print("[LFSocket]: Received binary message, size: %d bytes" % packet.size())
+					_logger.log('Received binary message, size: %d bytes' % packet.size())
 					_handle_binary_message(packet);
 			
 			# Check heartbeat
@@ -318,32 +322,32 @@ func _handle_message(json_str: String) -> void:
 	var json := JSON.new();
 	var parse_err := json.parse(json_str);
 	if parse_err != OK:
-		push_error("[LFSocket]: Failed to parse JSON: %s" % json_str);
+		_logger.error('Failed to parse JSON: %s' % json_str);
 		return;
 	
 	var message: Dictionary = json.data;
-	print("[LFSocket]: Parsed message, type: %s" % message.get("type", "unknown"))
+	_logger.log('Parsed message', message);
 	
-	if message.has("type"):
+	if message.has('type'):
 		if message.type == 'pong':
-			print("[LFSocket]: Received pong, heartbeat acknowledged")
+			_logger.log('Received pong, heartbeat acknowledged')
 			_waiting_for_pong = false;
 		# Handle response to request
-		if message["type"] == "response":
-			var request_id: String = message.get("id", "");
-			print("[LFSocket]: Received response for request id: %s" % request_id)
+		if message['type'] == 'response':
+			var request_id: String = message.get('id', '');
+			_logger.log('Received response for request id: %s' % request_id)
 			if _pending_requests.has(request_id):
 				var pending = _pending_requests[request_id];
-				pending["callback"].call(message.get("data"));
+				pending['callback'].call(message.get('data'));
 			else:
-				push_warning("[LFSocket]: Received response for unknown request id: %s" % request_id)
+				push_warning('[LFSocket]: Received response for unknown request id: %s' % request_id)
 			return;
 	
 	# Handle server event
-	if message.has("event"):
-		var event: String = message["event"];
-		var data: Variant = message.get("data", {});
-		print("[LFSocket]: Received event: %s, listener count: %d" % [event, _listeners.get(event, []).size()])
+	if message.has('event'):
+		var event: String = message['event'];
+		var data: Variant = message.get('data', {});
+		_logger.log('Received event: %s, listener count: %d' % [event, _listeners.get(event, []).size()])
 		
 		# Call specific listeners
 		if _listeners.has(event):
@@ -357,34 +361,34 @@ func _handle_message(json_str: String) -> void:
 func _handle_binary_message(packet: PackedByteArray) -> void:
 	# Parse binary message with event name prefix
 	if packet.size() < 4:
-		push_warning("[LFSocket]: Binary message too short (size: %d)" % packet.size());
+		push_warning('[LFSocket]: Binary message too short (size: %d)' % packet.size());
 		return;
 	
 	var event_length := packet[0] | (packet[1] << 8) | (packet[2] << 16) | (packet[3] << 24);
 	if packet.size() < 4 + event_length:
-		push_warning("[LFSocket]: Binary message malformed - expected at least %d bytes, got %d" % [4 + event_length, packet.size()]);
+		push_warning('[LFSocket]: Binary message malformed - expected at least %d bytes, got %d' % [4 + event_length, packet.size()]);
 		return;
 	
 	var event_bytes := packet.slice(4, 4 + event_length);
 	var event := event_bytes.get_string_from_utf8();
 	var data := packet.slice(4 + event_length);
 	
-	print("[LFSocket]: Binary message event: %s, data size: %d bytes" % [event, data.size()])
+	_logger.log('Binary message event: %s, data size: %d bytes' % [event, data.size()])
 	
 	# Trigger listeners with binary data
 	if _listeners.has(event):
-		print("[LFSocket]: Triggering %d listener(s) for binary event: %s" % [_listeners[event].size(), event])
+		_logger.log('Triggering %d listener(s) for binary event: %s' % [_listeners[event].size(), event])
 		for callback in _listeners[event]:
 			callback.call(data);
 	else:
-		print("[LFSocket]: No listeners registered for binary event: %s" % event)
+		_logger.log('No listeners registered for binary event: %s' % event)
 
 func _start_heartbeat() -> void:
 	if _options.heartbeat_interval_ms <= 0:
-		print("[LFSocket]: Heartbeat disabled (interval: 0)")
+		_logger.log('Heartbeat disabled (interval: 0)')
 		return;
 	
-	print("[LFSocket]: Starting heartbeat with interval: %dms" % _options.heartbeat_interval_ms)
+	_logger.log('Starting heartbeat with interval: %dms' % _options.heartbeat_interval_ms)
 	_last_heartbeat_time = Time.get_ticks_msec();
 
 func _check_heartbeat() -> void:
@@ -394,12 +398,12 @@ func _check_heartbeat() -> void:
 	if now - _last_heartbeat_time >= _options.heartbeat_interval_ms:
 		if _waiting_for_pong:
 			# Didn't receive pong, connection might be dead
-			push_warning("[LFSocket]: Heartbeat timeout, no pong received. Reconnecting...");
+			push_warning('[LFSocket]: Heartbeat timeout, no pong received. Reconnecting...');
 			disconnect_from_server(false);
 			return;
 		
 		# Send ping
-		print("[LFSocket]: Sending heartbeat ping")
+		_logger.log('Sending heartbeat ping')
 		
 		sendMessage('ping', {});
 		_waiting_for_pong = true;
@@ -407,12 +411,12 @@ func _check_heartbeat() -> void:
 
 func _schedule_reconnect() -> void:
 	if !_options.auto_reconnect:
-		print("[LFSocket]: Auto-reconnect disabled, not attempting to reconnect")
+		_logger.log('Auto-reconnect disabled, not attempting to reconnect')
 		return;
 	
 	if _options.max_reconnect_attempts > 0 && _reconnect_attempts >= _options.max_reconnect_attempts:
-		push_error("[LFSocket]: Max reconnection attempts reached (%d attempts)" % _reconnect_attempts);
-		_trigger_error("Max reconnection attempts reached");
+		_logger.error('Max reconnection attempts reached (%d attempts)' % _reconnect_attempts);
+		_trigger_error('Max reconnection attempts reached');
 		return;
 	
 	_reconnect_attempts += 1;
@@ -420,13 +424,13 @@ func _schedule_reconnect() -> void:
 	
 	var tree := Engine.get_main_loop() as SceneTree;
 	if !tree:
-		push_error("[LFSocket]: Cannot schedule reconnect, SceneTree not available")
+		_logger.error('Cannot schedule reconnect, SceneTree not available')
 		return;
 	
-	print("[LFSocket]: Scheduling reconnection in %dms (attempt %d/%s)..." % [
+	_logger.log('Scheduling reconnection in %dms (attempt %d/%s)...' % [
 		_current_reconnect_interval, 
 		_reconnect_attempts, 
-		"∞" if _options.max_reconnect_attempts == 0 else str(_options.max_reconnect_attempts)
+		'∞' if _options.max_reconnect_attempts == 0 else str(_options.max_reconnect_attempts)
 	]);
 	
 	var reconnect_task := func() -> void:
@@ -440,23 +444,23 @@ func _schedule_reconnect() -> void:
 	reconnect_task.call();
 
 func _trigger_open() -> void:
-	print("[LFSocket]: Triggering onOpen callbacks (%d registered)" % _on_open_callbacks.size())
+	_logger.log('Triggering onOpen callbacks (%d registered)' % _on_open_callbacks.size())
 	for callback in _on_open_callbacks:
 		callback.call();
 
 func _trigger_close() -> void:
-	print("[LFSocket]: Triggering onClose callbacks (%d registered)" % _on_close_callbacks.size())
+	_logger.log('Triggering onClose callbacks (%d registered)' % _on_close_callbacks.size())
 	for callback in _on_close_callbacks:
 		callback.call();
 
 func _trigger_error(msg: String) -> void:
-	print("[LFSocket]: Error occurred: %s" % msg)
+	_logger.log('Error occurred: %s' % msg)
 	error.emit(msg);
 	for callback in _on_error_callbacks:
 		callback.call(msg);
 
 func _trigger_reconnecting(attempt: int) -> void:
-	print("[LFSocket]: Reconnection attempt #%d" % attempt)
+	_logger.log('Reconnection attempt #%d' % attempt)
 	reconnecting.emit(attempt);
 	for callback in _on_reconnecting_callbacks:
 		callback.call(attempt);

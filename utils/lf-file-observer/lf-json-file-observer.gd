@@ -12,6 +12,8 @@ func _init(filePath: String = '') -> void:
 
 
 func setByPath(propsPath: String, value):
-	var newData := (data as Dictionary).duplicate(true);
-	LFDictionary.setByPath(newData, propsPath, value);
-	data = newData;
+	data = LFDictionary.setByPath(data.duplicate(true), propsPath, value);
+
+
+func eraseByPath(propsPath: String):
+	data = LFDictionary.eraseByPath(data.duplicate(true), propsPath);

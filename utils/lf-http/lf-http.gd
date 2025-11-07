@@ -128,6 +128,7 @@ static func _absolutize(base_url: String, loc: String) -> String:
 		base_path = base_path.get_base_dir() + "/"
 	return "%s://%s%s%s%s" % [b.scheme, b.host, base_path, loc, ("" if b.query == "" else "")]
 
+
 static func findFreeTcpPort(
 	ip := "127.0.0.1",
 	from: int = 3000,
@@ -136,10 +137,11 @@ static func findFreeTcpPort(
 	var s := TCPServer.new();
 	for p in range(from, to):
 		if s.listen(p, ip) == OK:
-			print('[findFreeTcpPort]: Port ', p, ' is free');
+			LFLogger.printMessage('[findFreeTcpPort]: Port', p, 'is free')
 			s.stop()
-			print('[findFreeTcpPort]: freeing ', p, ' before return - ', !s.is_listening())
+			LFLogger.printMessage('[findFreeTcpPort]: freeing ', p, ' before return - ', !s.is_listening())
 			return p;
 		s.stop();
-	push_error('[findFreeTcpPort]: No free port between %s to %s' % [from, to]);
+	
+	LFLogger.pushError('[findFreeTcpPort]: No free port between %s to %s' % [from, to]);
 	return from;
