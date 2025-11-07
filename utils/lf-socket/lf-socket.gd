@@ -53,25 +53,25 @@ static func isConnected() -> bool:
 ## @param event: Event name
 ## @param data: Data to send (will be converted to JSON)
 ## @param queue_if_offline: Queue message if not connected (requires queue_offline_messages enabled)
-static func emit(event: String, data: Variant = {}, queue_if_offline: bool = true) -> void:
+static func message(message, queue_if_offline: bool = true) -> void:
 	if !_instance:
 		_logger.error('Not connected. Call connectWS() first.');
 		return;
-	_logger.log('emit() called for event: %s' % event)
+	_logger.log('emit() called for event: %s', message);
 	
-	_instance.sendMessage(event, data, queue_if_offline);
+	_instance.sendMessage(message, queue_if_offline);
 
 ## Send request and wait for response (HTTP-like)
 ## @param event: Event name
 ## @param data: Data to send (will be converted to JSON)
 ## @param timeout_ms: Timeout in milliseconds (0 = no timeout)
 ## @return: Response data or null on error/timeout
-static func request(event: String, data: Variant = {}, timeout_ms: int = 5000) -> Variant:
+static func request(payload, timeout_ms: int = 5000) -> Variant:
 	if !_instance:
 		_logger.error('Not connected. Call connectWS() first.');
 		return null;
-	_logger.log('request() called for event: %s, timeout: %dms' % [event, timeout_ms])
-	return await _instance.request_message(event, data, timeout_ms);
+	_logger.log('request() called for', payload, 'timeout: %dms' % [ timeout_ms])
+	return await _instance.request_message(payload, timeout_ms);
 
 ## Listen to server events
 ## @param event: Event name to listen for, or '*' for all events

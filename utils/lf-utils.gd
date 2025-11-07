@@ -2,14 +2,14 @@ class_name LFUtils;
 extends Resource;
 
 
-static func createTimer(t: float, callback := func(): pass) -> SceneTreeTimer:
-	var timer: SceneTreeTimer = treeRoot.root.get_tree().create_timer(t / 1000.0);
+static func createTimer(ms: float, callback := func(): pass) -> SceneTreeTimer:
+	var timer: SceneTreeTimer = treeRoot.root.get_tree().create_timer(ms / 1000.0);
 	timer.timeout.connect(callback, CONNECT_ONE_SHOT);
 	return timer;
 
 
-static func timeout(t: float, callback := func(): pass):
-	return await createTimer(t, callback).timeout;
+static func timeout(ms: float, callback := func(): pass):
+	return await createTimer(ms, callback).timeout;
 
 
 static var treeRoot: MainLoop:

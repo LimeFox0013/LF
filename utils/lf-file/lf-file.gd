@@ -109,3 +109,46 @@ static func _isWindowsAbsolute(p: String) -> bool:
 	var c := p.unicode_at(0);
 	var is_letter := (c >= 65 and c <= 90) or (c >= 97 and c <= 122); # A-Z or a-z
 	return is_letter;
+
+
+static func copyToDir(srcPath: String, dstDirPath: String, overwrite := true) -> bool:
+	var srcAbs := toAbsolute(srcPath);
+	if not FileAccess.file_exists(srcAbs):
+		LFLogger.pushError("LFFile.copyToDir: Source file does not exist: %s" % srcAbs);
+		return false;
+
+	var dstDirAbs := toAbsolute(dstDirPath).rstrip("/\\");
+	var dstState := pathLeadsTo(dstDirAbs);
+
+	# Ensure destination directory exists.
+	if dstState == PATH_TARGET.MISSING:
+		var mkErr := DirAccess.make_dir_recursive_absolute(dstDirAbs);
+		if mkErr != OK:
+			LFLogger.pushError("LFFile.copyToDir: Failed to create directory %s (err=%s)" % [dstDirAbs, mkErr]);
+			return false;
+	elif dstState == PATH_TARGET.FILE:
+		LFLogger.pushError("LFFile.copyToDir: Destination is a file, expected a directory: %s" % dstDirAbs);
+		return false;
+
+	var dstAbs := ("%s/%s" % [dstDirAbs, srcAbs.get_file()]).simplify_path();
+
+	# No-op if same absolute path.
+	if srcAbs == dstAbs:
+		return true;
+
+	# Handle overwrite policy.
+	if FileAccess.file_exists(dstAbs):
+		if not overwrite:
+			LFLogger.pushError("LFFile.copyToDir: File already exists and overwrite=false: %s" % dstAbs);
+			return false;
+		var rmErr := DirAccess.remove_absolute(dstAbs);
+		if rmErr != OK:
+			LFLogger.pushError("LFFile.copyToDir: Failed to remove existing file before overwrite %s (err=%s)" % [dstAbs, rmErr]);
+			return false;
+
+	var cpErr := DirAccess.copy_absolute(srcAbs, dstAbs);
+	if cpErr != OK:
+		LFLogger.pushError("LFFile.copyToDir: Copy failed %s -> %s (err=%s)" % [srcAbs, dstAbs, cpErr]);
+		return false;
+
+	return true;

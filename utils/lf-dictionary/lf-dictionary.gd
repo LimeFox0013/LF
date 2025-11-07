@@ -15,7 +15,7 @@ static func getByPath(dictionary: Dictionary, propsPath: String, stepDelta := 0)
 
 static func setByPath(dictionary: Dictionary, propsPath: String, value):
 	var pathArr := propsPath.split('.');
-	var targetProp := propsPath[pathArr.size() - 1];
+	var targetProp := pathArr[pathArr.size() - 1];
 	var target = getByPath(dictionary, propsPath, 1);
 	target.set(targetProp, value);
 	
@@ -24,7 +24,7 @@ static func setByPath(dictionary: Dictionary, propsPath: String, value):
 
 static func eraseByPath(dictionary: Dictionary, propsPath: String):
 	var pathArr := propsPath.split('.');
-	var targetProp := propsPath[pathArr.size() - 1];
+	var targetProp := pathArr[pathArr.size() - 1];
 	var target = getByPath(dictionary, propsPath, 1);
 	target.erase(targetProp);
 	

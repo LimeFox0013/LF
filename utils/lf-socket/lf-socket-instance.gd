@@ -1,11 +1,10 @@
-
 class_name LFSocketInstance;
 extends RefCounted;
 
 
 var _socket: WebSocketPeer;
 var _url: String;
-var _uid := LFUuid.gen('socken-instance');
+var _uid := LFUuid.gen('socket-instance');
 var _logger := LFLogger.new(['[LFSocketInstance] (%s):' % [_uid]]);
 var _connected: bool = false;
 var _options: LFSocketOptions;
@@ -34,7 +33,7 @@ signal reconnecting(attempt: int);
 func _init() -> void:
 	_socket = WebSocketPeer.new();
 
-func connect_to_server(url: String, options: LFSocketOptions) -> bool:
+func connect_to_server(url: String, options := LFSocketOptions.new()) -> bool:
 	_logger.log('Initializing connection to: %s' % url)
 	_url = url;
 	_options = options;
@@ -74,16 +73,11 @@ func disconnect_from_server(disable_reconnect: bool = true) -> void:
 func isConnected() -> bool:
 	return _connected;
 
-func sendMessage(type: String, data: Variant, queue_if_offline: bool = true) -> void:
-	var message := {
-		'type': type,
-		'data': data
-	};
-	
-	_logger.log('sendMessage(): type : %s, connected: %s' % [type, _connected])
+func sendMessage(message: Variant, queue_if_offline: bool = true) -> void:
+	_logger.log('sendMessage():', message, 'connected: %s' % [_connected]);
 	
 	if !_connected && queue_if_offline && _options.queue_offline_messages:
-		_logger.log('Not connected, queueing message: %s' % type)
+		_logger.log('Not connected, queueing message...')
 		_queue_message(message);
 	else:
 		_send_json(message);
@@ -115,17 +109,16 @@ func emit_binary(event: String, data: PackedByteArray) -> void:
 	else:
 		_logger.log('Binary data sent successfully, total size: %d bytes' % full_data.size())
 
-func request_message(event: String, data: Variant, timeout_ms: int) -> Variant:
+func request_message(payload, timeout_ms: int) -> Variant:
 	_request_counter += 1;
 	var request_id := 'req_%d_%d' % [Time.get_ticks_msec(), _request_counter];
 	
-	_logger.log('request_message() - event: %s, id: %s, timeout: %dms' % [event, request_id, timeout_ms])
+	_logger.log('request_message() -', payload, 'id: %s, timeout: %dms' % [request_id, timeout_ms]);
 	
 	var message := {
 		'type': 'request',
 		'id': request_id,
-		'event': event,
-		'data': data
+		'payload': payload,
 	};
 	
 	# Create promise for response
@@ -146,7 +139,7 @@ func request_message(event: String, data: Variant, timeout_ms: int) -> Variant:
 	while !response_received:
 		if timeout_ms > 0 && (Time.get_ticks_msec() - start_time) > timeout_ms:
 			_pending_requests.erase(request_id);
-			push_warning('[LFSocket]: Request timeout for event "%s" (id: %s)' % [event, request_id]);
+			push_warning('[LFSocket]: Request timeout for (id: %s)' % [request_id]);
 			return null;
 		await LFAwait.nextTick;
 	
@@ -405,7 +398,8 @@ func _check_heartbeat() -> void:
 		# Send ping
 		_logger.log('Sending heartbeat ping')
 		
-		sendMessage('ping', {});
+		#ToDo: set service messages as params
+		sendMessage({ 'type': 'ping' });
 		_waiting_for_pong = true;
 		_last_heartbeat_time = now;
 
