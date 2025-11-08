@@ -4,6 +4,18 @@ extends RefCounted;
 var _url := '';
 var data := LFUrlDef.new();
 
+# Handy aliases
+var scheme:
+	get(): return data.scheme;
+var host:
+	get(): return data.host;
+var port:
+	get(): return data.port;
+var path:
+	get(): return data.path;
+var query:
+	get(): return data.query;
+
 signal update;
 
 
@@ -15,6 +27,7 @@ func _init(url := '') -> void:
 func setUrl(url: String):
 	_url = url;
 	data = parse(url);
+	print(data)
 	update.emit();
 
 
