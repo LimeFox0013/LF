@@ -327,6 +327,9 @@ func _handle_message(json_str: String) -> void:
 	var message: Dictionary = json.data;
 	_logger.log('Parsed message', message);
 	
+	# Extract event name from 'type' or 'event' field
+	var event_name: String = message.get('event', message.get('type', ''));
+	
 	if message.has('type'):
 		if message.type == 'pong':
 			_logger.log('Received pong, heartbeat acknowledged')
@@ -342,20 +345,20 @@ func _handle_message(json_str: String) -> void:
 				push_warning('[LFSocket]: Received response for unknown request id: %s' % request_id)
 			return;
 	
-	# Handle server event
-	if message.has('event'):
-		var event: String = message['event'];
-		var data: Variant = message.get('data', {});
-		_logger.log('Received event: %s, listener count: %d' % [event, _listeners.get(event, []).size()])
-		
-		# Call specific listeners
-		if _listeners.has(event):
-			for callback in _listeners[event]:
-				callback.call(data);
-		
-		# Call wildcard listeners
+	# Trigger wildcard listeners with event name and data
+	if !_wildcard_listeners.is_empty():
+		_logger.log('Triggering %d wildcard listener(s) for event: %s' % [_wildcard_listeners.size(), event_name])
+		var data = message.get('data', message);
 		for callback in _wildcard_listeners:
-			callback.call(event, data);
+			callback.call(event_name, data);
+	
+	# Trigger specific event listeners
+	if event_name != '' && _listeners.has(event_name):
+		_logger.log('Triggering %d listener(s) for event: %s' % [_listeners[event_name].size(), event_name])
+		var data = message.get('data', message);
+		for callback in _listeners[event_name]:
+			callback.call(data);
+			
 
 func _handle_binary_message(packet: PackedByteArray) -> void:
 	# Parse binary message with event name prefix
