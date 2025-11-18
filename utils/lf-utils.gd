@@ -90,3 +90,15 @@ static func deepEqual(a, b) -> bool:
 
 		_:
 			return a == b;
+
+
+static func moveNode(node: Node2D, newParent: Node2D, newGlobalPosition := node.global_position):
+	var nodesCurrentParent = node.get_parent();
+	if nodesCurrentParent != newParent:
+		if nodesCurrentParent:
+			nodesCurrentParent.remove_child(node);
+		newParent.add_child.call_deferred(node);
+		node.global_position = newGlobalPosition;
+		await newParent.get_tree().process_frame;
+		node.owner = newParent;
+		

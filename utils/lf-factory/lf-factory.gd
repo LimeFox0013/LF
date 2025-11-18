@@ -70,7 +70,7 @@ func create(key, container := container):
 	if _pools[key].is_empty():
 		var newEntity = await _createFns[key].call();
 		await onNewCreated(newEntity);
-		await Utils.moveNode(newEntity, container);
+		await LFUtils.moveNode(newEntity, container);
 		
 		#if newEntity is Loot:
 			#var entityNumber = _entities.values().reduce(
