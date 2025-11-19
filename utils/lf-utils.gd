@@ -12,8 +12,11 @@ static func timeout(ms: float, callback := func(): pass):
 	return await createTimer(ms, callback).timeout;
 
 
-static var treeRoot: MainLoop:
+static var mainLoop: MainLoop:
 	get(): return Engine.get_main_loop();
+
+static var treeRoot: SceneTree:
+	get(): return mainLoop.root.get_tree();
 
 
 static func mergeArr(targetArray: Array, ...arrays):
@@ -92,13 +95,12 @@ static func deepEqual(a, b) -> bool:
 			return a == b;
 
 
-static func moveNode(node: Node2D, newParent: Node2D, newGlobalPosition := node.global_position):
+static func moveNode(node: Node, newParent: Node):
 	var nodesCurrentParent = node.get_parent();
 	if nodesCurrentParent != newParent:
 		if nodesCurrentParent:
 			nodesCurrentParent.remove_child(node);
 		newParent.add_child.call_deferred(node);
-		node.global_position = newGlobalPosition;
 		await newParent.get_tree().process_frame;
 		node.owner = newParent;
 		

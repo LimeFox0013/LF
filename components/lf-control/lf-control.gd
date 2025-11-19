@@ -8,9 +8,7 @@ extends Control;
 
 #func _init() -> void:
 func _ready() -> void:
-	print(1111, self, registryId)
 	if registryId:
-		print(registryId, self)
 		_controls_registry.set(registryId, self);
 
 

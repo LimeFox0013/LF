@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://g6emu0qukcc4" path="res://assets/LF/components/lf-control-out/lf-control-out.gd" id="1_bb460"]
 
-[node name="LFControlOut" type="Control" unique_id=592246715]
+[node name="LFControlOut" type="Control" unique_id=592246715 node_paths=PackedStringArray("label")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -10,6 +10,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_bb460")
+label = NodePath("Label")
 metadata/_custom_type_script = "uid://dlr7d2f7332b4"
 
 [node name="Label" type="Label" parent="." unique_id=1503314173]

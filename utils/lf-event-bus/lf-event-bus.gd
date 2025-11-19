@@ -10,8 +10,8 @@ static var ee: LFEventEmitter:
 	
 
 
-static func emit(event: String, payload := {}):
-	LFEventBus.ee.emit.call(event, payload);
+static func emit(event: String, ...args):
+	LFEventBus.ee.emit.callv([event] + args);
 
 
 static func on(event, cb: Callable):
