@@ -51,6 +51,11 @@ func reset():
 	container = Node.new();
 	#_createFns = {} as Dictionary[Variant, Callable];
 
+## calls current onReturn callback to each created entity
+func returnAllEntities():
+	for entity in _entities:
+		returnEntity(entity);
+
 
 func returnEntity(entity):
 	await onReturn(entity);
