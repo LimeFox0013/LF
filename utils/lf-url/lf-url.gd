@@ -27,7 +27,6 @@ func _init(url := '') -> void:
 func setUrl(url: String):
 	_url = url;
 	data = parse(url);
-	print(data)
 	update.emit();
 
 
