@@ -1,8 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://dep0nclqrbs4f"]
-
-[ext_resource type="Script" uid="uid://cuk20m6kf1ni3" path="res://utils/lf/components/lf-table/lf-table-header/lf-table-header.gd" id="1_hr58g"]
-
-[node name="LFTableHeader" type="MarginContainer"]
-size_flags_horizontal = 2
-size_flags_vertical = 0
-script = ExtResource("1_hr58g")
