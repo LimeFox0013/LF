@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://kwt5oqnnav3m"]
+
+[ext_resource type="Script" uid="uid://ujwmk2wu2es5" path="res://assets/LF/2D/lf-virtual-grid/lf-virtual-grid.gd" id="1_phxwm"]
+
+[node name="LFVirtualGrid" type="Node2D" unique_id=1800602000]
+script = ExtResource("1_phxwm")

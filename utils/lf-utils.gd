@@ -103,4 +103,17 @@ static func moveNode(node: Node, newParent: Node):
 		newParent.add_child.call_deferred(node);
 		await newParent.get_tree().process_frame;
 		node.owner = newParent;
-		
+
+
+static func getProjectScreenSize() -> Vector2:
+	return Vector2(
+		ProjectSettings.get_setting("display/window/size/viewport_width"),
+		ProjectSettings.get_setting("display/window/size/viewport_height"),
+	);
+
+
+static func getRandomPointInRect(rect: Rect2):
+	return Vector2(
+		randf_range(rect.position.x, rect.position.x + rect.size.x),
+		randf_range(rect.position.y, rect.position.y + rect.size.y),
+	);

@@ -39,7 +39,6 @@ func off(event: String, cb: Callable):
 func _getCallbacks(event: String) -> Array[Callable]:
 	var ensuredHandlers: Array[Callable] = [];
 	if handlers.has(event):
-		print(123, handlers.get(event))
 		ensuredHandlers.assign(handlers.get(event));
 	return ensuredHandlers;
 

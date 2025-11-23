@@ -74,24 +74,9 @@ func create(key, container := container):
 	
 	if _pools[key].is_empty():
 		var newEntity = await _createFns[key].call();
+		_entities[newEntity] = key;
 		await onNewCreated(newEntity);
 		await LFUtils.moveNode(newEntity, container);
-		
-		#if newEntity is Loot:
-			#var entityNumber = _entities.values().reduce(
-				#func(count, entityKey):
-					#return count + 1 if entityKey == key else count,
-				#0,
-			#) + 1;
-			#var label = Label.new();
-			#var labelSettings = LabelSettings.new();
-			#labelSettings.font_size = 60.0;
-			#labelSettings.font_color = Color.CHARTREUSE;
-			#label.label_settings = labelSettings;
-			#label.text = str(entityNumber);
-			#newEntity.add_child(label)
-		
-		_entities[newEntity] = key;
 		_pools[key].append(newEntity);
 		
 	var entity = _pools[key].pop_back();

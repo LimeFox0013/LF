@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://78b1b6773em6"]
+
+[ext_resource type="Script" uid="uid://dr8qky02tg0ju" path="res://assets/LF/2D/lf-infinite-scroll-sprite/lf-background-controller.gd" id="1_44b6v"]
+
+[node name="LfBackgroundController" type="Node2D" unique_id=2043316914]
+script = ExtResource("1_44b6v")
