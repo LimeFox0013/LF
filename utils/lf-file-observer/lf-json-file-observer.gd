@@ -17,3 +17,7 @@ func setByPath(propsPath: String, value):
 
 func eraseByPath(propsPath: String):
 	data = LFDictionary.eraseByPath(data.duplicate(true), propsPath);
+
+
+func getByPath(propsPath: String, fallbackValue = null):
+	return LFDictionary.getByPath(data, propsPath) || fallbackValue;

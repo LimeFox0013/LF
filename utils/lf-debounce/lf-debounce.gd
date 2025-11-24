@@ -1,6 +1,6 @@
 class_name LFDebounce;
 
-static func fn(callback: Callable, t := 1000.0 / 60):
+static func fn(callback: Callable, ms := 1000.0 / 60):
 	var state := {
 		'timer': null,
 		'callback': null,
@@ -10,5 +10,5 @@ static func fn(callback: Callable, t := 1000.0 / 60):
 		if state.timer:
 			state.timer.timeout.disconnect(state.callback);
 		state.callback = callback.bindv(args);
-		state.timer = LFUtils.createTimer(t, state.callback);
+		state.timer = LFUtils.createTimer(ms, state.callback);
 	

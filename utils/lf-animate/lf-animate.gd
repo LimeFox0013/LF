@@ -85,3 +85,69 @@ static func comicsPopDissapear(
 	tween.tween_property(node, "modulate", Color(1, 1, 1, 0), fallTime * 0.9);
 	await tween.finished;
 	node.position = originalPosition;
+
+
+static func fallPaper(
+	node: Control,
+	duration: float = 2.0,
+	sway_amplitude: float = 100.0,
+	rotation_amplitude: float = 15.0,
+	extra_vertical_margin: float = 100.0,
+) -> void:
+	if node == null or not is_instance_valid(node):
+		return
+
+	var viewport_rect := node.get_viewport().get_visible_rect()
+
+	# Start slightly above the top, end slightly below the bottom
+	var originalPosition = node.position;
+	var end_y := node.position.y + 1800.0
+
+	# --- FALL (Y) ---
+	var fall_tween := node.create_tween()
+	fall_tween.tween_property(
+		node,
+		"position:y",
+		end_y,
+		duration
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+
+	# --- SWAY (X) ---
+	var sway_tween := node.create_tween()
+	sway_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	# left
+		# right
+	sway_tween.tween_property(
+		node,
+		"position:x",
+		originalPosition.x + sway_amplitude,
+		duration * 0.5,
+	);
+	sway_tween.tween_property(
+		node, 
+		"position:x",
+		originalPosition.x - sway_amplitude,
+		duration * 0.5,
+	);
+
+	# --- ROTATION WOBBLE ---
+	var base_rot := node.rotation_degrees
+	var rot_tween := node.create_tween()
+	rot_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	rot_tween.tween_property(
+		node, "rotation_degrees",
+		base_rot - rotation_amplitude,
+		duration * 0.5
+	)
+	rot_tween.tween_property(
+		node, "rotation_degrees",
+		base_rot - rotation_amplitude,
+		duration * 0.5
+	)
+
+	# All tweens have the same total duration, so awaiting one is enough
+	await fall_tween.finished
+
+	# Optional: clean up after falling
+	if is_instance_valid(node):
+		node.queue_free()
