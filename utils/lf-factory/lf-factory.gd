@@ -63,6 +63,14 @@ func returnEntity(entity):
 	_pools[key].append(entity);
 
 
+func createEntityInPool(key, container := container):
+	var newEntity = await _createFns[key].call();
+	_entities[newEntity] = key;
+	await onNewCreated(newEntity);
+	await LFUtils.moveNode(newEntity, container);
+	_pools[key].append(newEntity);
+	return newEntity;
+
 func create(key, container := container):
 	if !_createFns.has(key):
 		push_error(
@@ -73,11 +81,7 @@ func create(key, container := container):
 		return;
 	
 	if _pools[key].is_empty():
-		var newEntity = await _createFns[key].call();
-		_entities[newEntity] = key;
-		await onNewCreated(newEntity);
-		await LFUtils.moveNode(newEntity, container);
-		_pools[key].append(newEntity);
+		await createEntityInPool(key, container)
 		
 	var entity = _pools[key].pop_back();
 	await onCreate(entity);
